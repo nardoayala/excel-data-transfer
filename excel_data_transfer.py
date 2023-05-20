@@ -13,8 +13,8 @@ def main(argv):
     # Copy and format the columns of interest
     formatted_df = df.iloc[start:end, [1, 6, 13, 17]].copy()
     formatted_df.iloc[:, 0] = pd.to_datetime(formatted_df.iloc[:, 0], format='%d/%m/%Y').dt.date
-    formatted_df.iloc[:, 2] = pd.to_numeric(formatted_df.iloc[:, 2].str.replace(',', ''), errors='coerce')
-    formatted_df.iloc[:, 3] = pd.to_numeric(formatted_df.iloc[:, 3].str.replace(',', ''), errors='coerce')
+    formatted_df.iloc[:, 2] = pd.to_numeric(formatted_df.iloc[:, 2].astype(str).str.replace(',', ''), errors='coerce')
+    formatted_df.iloc[:, 3] = pd.to_numeric(formatted_df.iloc[:, 3].astype(str).str.replace(',', ''), errors='coerce')
 
     # Here we reverse the order of the rows
     formatted_df = formatted_df.iloc[::-1]

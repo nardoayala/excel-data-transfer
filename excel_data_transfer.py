@@ -4,8 +4,8 @@ import sys
 
 def main(argv):
     filename = argv[1]
-    start = int(argv[2])
-    end = int(argv[3])
+    start = int(argv[2]) - 2
+    end = int(argv[3]) - 1
 
     xlsx = pd.ExcelFile(filename, engine='openpyxl')
     df = xlsx.parse(xlsx.sheet_names[0])

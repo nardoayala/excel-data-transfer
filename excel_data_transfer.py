@@ -23,7 +23,8 @@ def main(argv):
                 year = int(date_list[2])
                 month = int(date_list[1])
                 day = int(date_list[0])
-                date = datetime(year, month, day).strftime("%m-%d-%Y")
+                date = datetime(year, month, day).date()
+                # append as excel date object
                 row.append(date)
             ## if colum is 14 or 18, convert text with ',' to float
             elif j == 14 or j == 18:

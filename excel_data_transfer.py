@@ -1,58 +1,71 @@
-from datetime import datetime
+import argparse
+import locale
 import openpyxl
-import sys
+from datetime import datetime
 
-def main(argv):
-    filename = argv[1]
-    start = int(argv[2])
-    # Add 1 to the end row to include it in the range
-    end = int(argv[3]) + 1
+# Function to convert date string (DD/MM/YYYY) to date object
+def convert_date(date_str):
+    day, month, year = map(int, date_str.split("/"))
+    return datetime(year, month, day).date()
 
-    wb = openpyxl.load_workbook(filename)
-    # Store data from the start to the end rows inside the B, G, N and R excel columns
-    columns_index = [2, 7, 14, 18]
-    data = []
+def main():
+    # Set up command line argument parser
+    parser = argparse.ArgumentParser(description='Manipulate Excel Spreadsheet.')
+    parser.add_argument('filename', help='Excel file name')
+    parser.add_argument('start', type=int, help='Start row')
+    parser.add_argument('end', type=int, help='End row')
+    args = parser.parse_args()
 
-    # Set first sheet as active sheet
-    wb.active = 0
+    # Set locale to handle numeric conversions
+    locale.setlocale(locale.LC_NUMERIC, '')
 
-    # Create new sheet called "Formatted data" if it doesn't exist
-    if "Formatted data" not in wb.sheetnames:
-        wb.create_sheet("Formatted data")
-
-    for i in range(start, end):
-        row = []
-        for j in columns_index:
-            ## If column is 2, convert date string (DD/MM/YYYY) to date object
-            if j == 2:
-                date_list = wb.active.cell(row=i, column=j).value.split("/")
-                year = int(date_list[2])
-                month = int(date_list[1])
-                day = int(date_list[0])
-                date = datetime(year, month, day).date()
-                # append as excel date object
-                row.append(date)
-            ## If colum is 14 or 18, convert number stored as string with ',' as thousand separator to float
-            elif j == 14 or j == 18:
-                row.append(float(wb.active.cell(row=i, column=j).value.replace(",", "")))
-            else:
-                row.append(wb.active.cell(row=i, column=j).value)
-        data.append(row)
+    # Indexes of columns 'B', 'G', 'N' and 'R'
+    columns_index = [1, 6, 13, 17]
     
-    # Invert data list so oldest entries are at the top
-    data.reverse()
+    try:
+        # Load workbook
+        wb = openpyxl.load_workbook(args.filename)
+        # Set the first sheet as the active sheet
+        ws = wb.active
 
-    # If the new sheet already has data, delete it
-    if wb["Formatted data"].max_row > 1:
-        wb.remove(wb["Formatted data"])
-        wb.create_sheet("Formatted data")
-
-    # Append the rows to the new sheet in inverse order
-    for row in data:
-        wb["Formatted data"].append(row)
-
-    # Save the new sheet
-    wb.save(filename)
+        data = []
+        
+        # Iterate over specified range of rows using ws.iter_rows
+        for row_cells in ws.iter_rows(min_row=args.start, max_row=args.end):
+            row = []
+            for column in columns_index:
+                cell = row_cells[column]
+                # Skip if cell has no value
+                if cell.value is None:
+                    continue
+                # Convert date string to date object for column 'B'
+                if column == 1:
+                    row.append(convert_date(cell.value))
+                # Convert string to float for columns 'N' and 'R'
+                elif column in {13, 17}:
+                    row.append(locale.atof(cell.value))
+                else:
+                    row.append(cell.value)
+            data.append(row)
+        
+        # Reverse the data list so oldest entries are at the top
+        data.reverse()
+        
+        # Remove and create the "Formatted data" sheet
+        if "Formatted data" in wb.sheetnames:
+            wb.remove(wb["Formatted data"])
+        formatted_ws = wb.create_sheet("Formatted data")
+        
+        # Append the rows to the new sheet in inverse order
+        for row in data:
+            formatted_ws.append(row)
+        
+        # Save the modified workbook
+        wb.save(args.filename)
+    except FileNotFoundError:
+        print(f"File {args.filename} not found.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()

@@ -1,21 +1,20 @@
 #!/usr/bin/python3
 import argparse
 import openpyxl
-from datetime import datetime
+import pyperclip
 
+def format_date(date_str):
+    date = date_str.split("/")
+    day = date[0]
+    month = date[1]
+    year = date[2]
+    return f"{month}/{day}/{year}"
 
-# Function to convert date string (DD/MM/YYYY) to date object
-def convert_date(date_str):
-    day, month, year = map(int, date_str.split("/"))
-    return datetime(year, month, day).date()
-
-
-def convert_string_to_float(string):
-    return float(string.replace(",", ""))
+def format_number(string):
+    return string.replace(",", "")
 
 
 def main():
-    # Set up command line argument parser
     parser = argparse.ArgumentParser(
         description='Manipulate Excel Spreadsheet.'
     )
@@ -24,8 +23,8 @@ def main():
     parser.add_argument('end', type=int, help='End row')
     args = parser.parse_args()
 
-    # Indexes of columns 'B', 'G', 'N' and 'R'
-    columns_index = [1, 6, 13, 17]
+    # Indexes of columns 'B', 'G', 'N'
+    columns_index = [1, 6, 13]
 
     try:
         # Load workbook
@@ -35,7 +34,6 @@ def main():
 
         data = []
 
-        # Iterate over specified range of rows using ws.iter_rows
         for row_cells in ws.iter_rows(min_row=args.start, max_row=args.end):
             row = []
             for column in columns_index:
@@ -43,37 +41,29 @@ def main():
                 # Skip if cell has no value
                 if cell.value is None:
                     continue
-                # Convert date string to date object for column 'B'
                 if column == 1:
-                    row.append(convert_date(cell.value))
+                    row.append(format_date(cell.value))
                     # Insert an empty column after 'B'
                     row.append("")
-                # Convert string to float for columns 'N' and 'R'
-                elif column in {13, 17}:
-                    row.append(convert_string_to_float(cell.value))
+                elif column == 13:
+                    row.append(format_number(cell.value))
                     # Append a column with the string "Facebank" after "N"
-                    if column == 13:
-                        row.append("Facebank")
+                    row.append("Facebank")
                 else:
                     row.append(cell.value)
             data.append(row)
 
         # Reverse the data list so oldest entries are at the top
         data.reverse()
-
-        # Remove and create the "Formatted data" sheet
-        if "Formatted data" in wb.sheetnames:
-            wb.remove(wb["Formatted data"])
-        formatted_ws = wb.create_sheet("Formatted data")
-
-        # Append the rows to the new sheet in inverse order
+        
+        data_for_clipboard = ""
         for row in data:
-            formatted_ws.append(row)
+            if row != data[-1]:
+                data_for_clipboard += "\t".join(row) + "\n"
+            else:
+                data_for_clipboard += "\t".join(row)
+        pyperclip.copy(data_for_clipboard)
 
-        wb.active = formatted_ws
-
-        # Save the modified workbook
-        wb.save(args.filename)
     except FileNotFoundError:
         print(f"File {args.filename} not found.")
     except Exception as e:

@@ -51,6 +51,8 @@ def main():
                     row.append("Facebank")
                 else:
                     row.append(cell.value)
+            if "COMISION" in row[2]:
+                row[1] = "Bank fees"
             data.append(row)
 
         # Reverse the data list so oldest entries are at the top

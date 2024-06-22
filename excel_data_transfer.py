@@ -3,12 +3,14 @@ import argparse
 import openpyxl
 import pyperclip
 
+
 def format_date(date_str):
     date = date_str.split("/")
     day = date[0]
     month = date[1]
     year = date[2]
     return f"{month}/{day}/{year}"
+
 
 def format_number(string):
     return string.replace(",", "")
@@ -57,7 +59,7 @@ def main():
 
         # Reverse the data list so oldest entries are at the top
         data.reverse()
-        
+
         data_for_clipboard = ""
         for row in data:
             if row != data[-1]:
